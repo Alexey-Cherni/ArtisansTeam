@@ -1,0 +1,79 @@
+{
+  "_comment": "Artisans configuration. Every key is described in CONFIGURATION.md. Keys starting with _ are comments and are ignored.",
+  "version": "1.0.0",
+
+  "trackingDir": ".artisans",
+
+  "knowledge": {
+    "_comment": "Project knowledge written by /artisans-knowledge into {trackingDir}/knowledge/. Every agent reads the files its prompt names; without them agents explore the repository instead.",
+    "files": [
+      "PROJECT-OVERVIEW.md",
+      "TOOLCHAIN.md",
+      "CONVENTIONS.md",
+      "TESTING.md",
+      "REVIEW-CHECKLIST.md",
+      "PROJECT-RULES.md"
+    ],
+    "maxLinesPerFile": 200,
+    "staleAfterCommits": 50,
+    "requireBeforeRun": "ask",
+    "learnings": true,
+    "learningsMaxEntries": 30
+  },
+
+  "agents": {
+    "researcher": { "file": "artisans-researcher", "label": "Researcher",          "phase": "analysis", "enabledByDefault": true },
+    "architect":  { "file": "artisans-architect",  "label": "Architect",           "phase": "analysis", "enabledByDefault": true },
+    "developer":  { "file": "artisans-developer",  "label": "Developer",           "phase": "delivery", "enabledByDefault": true },
+    "reviewer":   { "file": "artisans-reviewer",   "label": "Code Reviewer",       "phase": "delivery", "enabledByDefault": true },
+    "qa":         { "file": "artisans-qa",         "label": "QA",                  "phase": "delivery", "enabledByDefault": true },
+    "security":   { "file": "artisans-security",   "label": "Security Specialist", "phase": "delivery", "enabledByDefault": true }
+  },
+
+  "models": {
+    "defaultProfile": "balanced",
+    "claude": {
+      "_comment": "Claude Code: aliases passed as the Agent tool's model parameter. inherit = pass no model, so the agent file's model: line decides (model: inherit there = the session model; a full model ID there pins a version).",
+      "allowed": ["haiku", "sonnet", "opus", "fable", "inherit"],
+      "profiles": {
+        "economy":  { "researcher": "haiku",  "architect": "sonnet", "developer": "sonnet", "reviewer": "sonnet", "qa": "haiku",  "security": "sonnet" },
+        "balanced": { "researcher": "sonnet", "architect": "opus",   "developer": "sonnet", "reviewer": "opus",   "qa": "sonnet", "security": "opus" },
+        "max":      { "researcher": "opus",   "architect": "fable",  "developer": "opus",   "reviewer": "fable",  "qa": "opus",   "security": "fable" }
+      }
+    },
+    "copilot": {
+      "_comment": "GitHub Copilot: model names exactly as the Copilot model picker shows them. Written into each .github/agents/*.agent.md model: line by install.py. Check the names against your picker; availability depends on your Copilot plan.",
+      "profiles": {
+        "economy":  { "researcher": "Claude Haiku 5.5 (copilot)",  "architect": "Claude Sonnet 5.5 (copilot)", "developer": "Claude Sonnet 5.5 (copilot)", "reviewer": "Claude Sonnet 5.5 (copilot)", "qa": "Claude Haiku 5.5 (copilot)",  "security": "Claude Sonnet 5.5 (copilot)" },
+        "balanced": { "researcher": "Claude Sonnet 5.5 (copilot)", "architect": "Claude Opus 5.5 (copilot)",   "developer": "Claude Sonnet 5.5 (copilot)", "reviewer": "Claude Opus 5.5 (copilot)",   "qa": "Claude Sonnet 5.5 (copilot)", "security": "Claude Opus 5.5 (copilot)" },
+        "max":      { "researcher": "Claude Opus 5.5 (copilot)",   "architect": "Claude Opus 5.5 (copilot)",   "developer": "Claude Opus 5.5 (copilot)",   "reviewer": "Claude Opus 5.5 (copilot)",   "qa": "Claude Opus 5.5 (copilot)",   "security": "Claude Opus 5.5 (copilot)" }
+      }
+    }
+  },
+
+  "flow": {
+    "architect": "auto",
+    "maxRounds": {
+      "codeReview": 3,
+      "testReview": 2,
+      "qa": 2,
+      "security": 2
+    },
+    "securityBlocksOn": ["critical", "high"],
+    "branch": {
+      "protected": ["main", "master", "develop"],
+      "suggestedPrefix": "artisans/"
+    },
+    "commit": "ask"
+  },
+
+  "report": {
+    "file": "report.html",
+    "autoOpen": false,
+    "language": "auto"
+  },
+
+  "guard": {
+    "enabled": true
+  }
+}

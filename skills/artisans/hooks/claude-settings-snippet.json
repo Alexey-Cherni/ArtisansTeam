@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/skills/artisans/hooks/guard-command",
+            "timeout": 10,
+            "statusMessage": "Artisans guard"
+          }
+        ]
+      }
+    ]
+  }
+}

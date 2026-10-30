@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!--
+  Artisans run report template.
+
+  HOW TO FILL (orchestrator):
+  1. Copy this file to {trackingDir}/runs/{run_id}/report.html.
+  2. Replace ONLY the JSON inside the script block whose id is run-data (below the CSS) with this run's data.
+     Keep every key; use [] or "" for anything that does not apply. Never edit the CSS or the renderer.
+  3. Inside JSON strings write "<\/" instead of "</" so the script block cannot be closed early.
+  The page is self-contained (no network). It renders in light or dark mode following the OS setting.
+
+  Status values:  status         DONE | IN PROGRESS | REJECTED | STOPPED | FAILED
+                  stages[].status done | in-progress | pending | skipped | blocked | failed
+                  severities      code review: blocker | major | minor | nit
+                                  security:    critical | high | medium | low | info
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artisans Run Report</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface2: #eef1f4; --border: #d9dee4;
+    --text: #1b1f24; --muted: #5b6672; --accent: #2f6fde;
+    --ok: #1f8a4c; --warn: #b7791f; --bad: #c9372c; --info: #6b5bd6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1419; --surface: #1a2028; --surface2: #242d38; --border: #2d3a47;
+      --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+      --ok: #3fb950; --warn: #d29922; --bad: #f85149; --info: #bc8cff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.55;
+         font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 16px 64px; }
+  h1 { font-size: 1.7rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kv { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .kv b { display: block; font-size: .72rem; text-transform: uppercase; color: var(--muted); letter-spacing: .04em; }
+  .kv span { font-weight: 600; word-break: break-word; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .72rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .b-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+  .b-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .b-bad { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+  .b-info { background: color-mix(in srgb, var(--info) 16%, transparent); color: var(--info); }
+  .b-muted { background: var(--surface2); color: var(--muted); }
+  .pipeline { display: flex; flex-wrap: wrap; gap: 8px; }
+  .step { flex: 1 1 120px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: 8px 10px; background: var(--surface2); }
+  .step small { display: block; color: var(--muted); }
+  .s-done { border-left-color: var(--ok); } .s-failed, .s-blocked { border-left-color: var(--bad); }
+  .s-in-progress { border-left-color: var(--accent); } .s-pending, .s-skipped { border-left-color: var(--border); opacity: .75; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: .72rem; text-transform: uppercase; color: var(--muted); background: var(--surface2); }
+  code { background: var(--surface2); padding: 1px 5px; border-radius: 4px; font-size: .85em; word-break: break-all; }
+  details { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin: 8px 0; background: var(--surface2); }
+  summary { cursor: pointer; font-weight: 600; }
+  ul { margin: 6px 0; padding-left: 20px; }
+  .muted { color: var(--muted); }
+  .num-add { color: var(--ok); } .num-del { color: var(--bad); }
+  .empty { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script type="application/json" id="run-data">
+{
+  "title": "Example run",
+  "task": "Add rate limiting to the login endpoint",
+  "runId": "2026-01-01-add-rate-limiting",
+  "status": "DONE",
+  "host": "Claude Code",
+  "branch": "artisans/add-rate-limiting",
+  "baseline": "abc1234",
+  "started": "2026-01-01 10:00",
+  "closed": "2026-01-01 11:20",
+  "summary": "Login attempts are now limited to 5 per minute per IP. Reviewer, QA and Security approved.",
+  "team": [
+    { "role": "Researcher", "involved": true, "model": "sonnet", "rounds": 1, "verdict": "done" },
+    { "role": "Architect", "involved": false, "model": "-", "rounds": 0, "verdict": "not needed" },
+    { "role": "Developer", "involved": true, "model": "sonnet", "rounds": 2, "verdict": "done" },
+    { "role": "Code Reviewer", "involved": true, "model": "opus", "rounds": 3, "verdict": "APPROVED" },
+    { "role": "QA", "involved": true, "model": "sonnet", "rounds": 1, "verdict": "PASS" },
+    { "role": "Security", "involved": true, "model": "opus", "rounds": 1, "verdict": "APPROVED" }
+  ],
+  "stages": [
+    { "name": "Research", "status": "done", "rounds": 1, "note": "" },
+    { "name": "Architecture", "status": "skipped", "rounds": 0, "note": "not needed" },
+    { "name": "Plan approval", "status": "done", "rounds": 1, "note": "approved" },
+    { "name": "Development", "status": "done", "rounds": 2, "note": "" },
+    { "name": "Code review", "status": "done", "rounds": 2, "note": "" },
+    { "name": "QA", "status": "done", "rounds": 1, "note": "" },
+    { "name": "Test review", "status": "done", "rounds": 1, "note": "" },
+    { "name": "Security", "status": "done", "rounds": 1, "note": "" }
+  ],
+  "plan": {
+    "summary": "Add a middleware limiter in front of the login handler.",
+    "steps": ["Add limiter middleware", "Wire it to the login route", "Return 429 with Retry-After"],
+    "subtasks": []
+  },
+  "changes": {
+    "stat": "3 files changed, 96 insertions(+), 4 deletions(-)",
+    "files": [
+      { "path": "src/middleware/rateLimit.ts", "change": "added", "added": 58, "removed": 0, "why": "The limiter" },
+      { "path": "src/routes/auth.ts", "change": "modified", "added": 6, "removed": 4, "why": "Wire limiter" },
+      { "path": "tests/rateLimit.test.ts", "change": "added", "added": 32, "removed": 0, "why": "QA tests" }
+    ]
+  },
+  "reviews": [
+    { "round": 1, "kind": "code", "verdict": "CHANGES_REQUESTED", "findings": [
+      { "severity": "major", "file": "src/middleware/rateLimit.ts", "line": 12, "text": "Key ignores X-Forwarded-For behind the proxy", "resolution": "fixed" }
+    ] },
+    { "round": 2, "kind": "code", "verdict": "APPROVED", "findings": [] },
+    { "round": 1, "kind": "tests", "verdict": "APPROVED", "findings": [] }
+  ],
+  "tests": {
+    "command": "npm test",
+    "passed": 42, "failed": 0, "skipped": 1,
+    "added": [ { "path": "tests/rateLimit.test.ts", "cases": ["allows 5 attempts", "blocks the 6th with 429", "resets after the window"] } ],
+    "notes": ""
+  },
+  "security": {
+    "verdict": "APPROVED",
+    "findings": [ { "severity": "low", "title": "Limiter state is in memory", "file": "src/middleware/rateLimit.ts", "text": "Not shared across instances", "resolution": "accepted by user" } ]
+  },
+  "decisions": [ { "time": "10:12", "text": "Approved plan as proposed", "by": "user" } ],
+  "userActions": [ { "text": "Create branch artisans/add-rate-limiting", "done": true } ],
+  "verifyByHand": ["Try 6 logins from the staging UI and confirm the 6th shows the lockout message"],
+  "nextSteps": ["Commit the change", "Consider a shared store (Redis) for multi-instance deploys"],
+  "timeline": [
+    { "time": "10:00", "actor": "orchestrator", "event": "Run created" },
+    { "time": "10:05", "actor": "researcher", "event": "Research written" },
+    { "time": "11:20", "actor": "orchestrator", "event": "Run closed: DONE" }
+  ],
+  "artifacts": [
+    { "label": "Status", "path": "status.md" },
+    { "label": "Research", "path": "research.md" },
+    { "label": "Plan", "path": "plan.md" }
+  ]
+}
+</script>
+
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById('run-data').textContent);
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var arr = function (x) { return Array.isArray(x) ? x : []; };
+  var tone = function (v) {
+    v = String(v || '').toLowerCase();
+    if (/^(done|approved|pass|fixed|ok|yes|true)$/.test(v)) return 'b-ok';
+    if (/(blocker|critical|high|failed|fail|blocked|rejected|changes_requested)/.test(v)) return 'b-bad';
+    if (/(major|medium|in progress|in-progress|open|stopped|warn)/.test(v)) return 'b-warn';
+    if (/(minor|low|info|nit)/.test(v)) return 'b-info';
+    return 'b-muted';
+  };
+  var badge = function (v) { return v ? '<span class="badge ' + tone(v) + '">' + esc(v) + '</span>' : ''; };
+  var none = '<p class="empty">None.</p>';
+  var list = function (items, fn) {
+    items = arr(items);
+    return items.length ? '<ul>' + items.map(function (i) { return '<li>' + (fn ? fn(i) : esc(i)) + '</li>'; }).join('') + '</ul>' : none;
+  };
+  var table = function (head, rows) {
+    return rows.length ? '<div class="table-scroll"><table><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '</tbody></table></div>' : none;
+  };
+  var card = function (title, body) { return '<section class="card"><h2>' + esc(title) + '</h2>' + body + '</section>'; };
+
+  document.title = 'Artisans · ' + (d.title || d.runId || 'Run');
+  var h = '';
+  h += '<h1>' + esc(d.title) + ' ' + badge(d.status) + '</h1>';
+  h += '<div class="sub">' + esc(d.runId) + ' · ' + esc(d.started) + (d.closed ? ' → ' + esc(d.closed) : '') + '</div>';
+
+  h += card('Overview',
+    '<p>' + esc(d.summary) + '</p>' +
+    '<div class="grid">' +
+    [['Task', d.task], ['Branch', d.branch], ['Baseline', d.baseline], ['Host', d.host], ['Files changed', arr(d.changes && d.changes.files).length]]
+      .map(function (kv) { return '<div class="kv"><b>' + esc(kv[0]) + '</b><span>' + esc(kv[1]) + '</span></div>'; }).join('') +
+    '</div>');
+
+  h += card('Pipeline', '<div class="pipeline">' + arr(d.stages).map(function (s) {
+    return '<div class="step s-' + esc(String(s.status).toLowerCase().replace(/\s+/g, '-')) + '"><strong>' + esc(s.name) + '</strong>' +
+      '<small>' + esc(s.status) + (s.rounds > 1 ? ' · ' + esc(s.rounds) + ' rounds' : '') + '</small>' +
+      (s.note ? '<small>' + esc(s.note) + '</small>' : '') + '</div>';
+  }).join('') + '</div>');
+
+  var ua = arr(d.userActions).filter(function (a) { return !a.done; });
+  if (ua.length || arr(d.verifyByHand).length) {
+    h += card('Waiting on you',
+      (ua.length ? '<h3>Actions</h3>' + list(ua, function (a) { return esc(a.text); }) : '') +
+      (arr(d.verifyByHand).length ? '<h3>Verify by hand</h3>' + list(d.verifyByHand) : ''));
+  }
+
+  h += card('Team and models', table(['Role', 'Involved', 'Model', 'Rounds', 'Verdict'],
+    arr(d.team).map(function (t) { return [esc(t.role), t.involved ? 'yes' : '<span class="muted">no</span>', '<code>' + esc(t.model) + '</code>', esc(t.rounds), badge(t.verdict)]; })));
+
+  var p = d.plan || {};
+  h += card('Approved plan', '<p>' + esc(p.summary) + '</p>' + list(p.steps) +
+    (arr(p.subtasks).length ? '<h3>Subtasks</h3>' + table(['Subtask', 'Status'], arr(p.subtasks).map(function (s) { return [esc(s.title), badge(s.status)]; })) : ''));
+
+  var c = d.changes || {};
+  h += card('What changed', '<p class="muted">' + esc(c.stat) + '</p>' + table(['File', 'Change', '+/−', 'Why'],
+    arr(c.files).map(function (f) {
+      return ['<code>' + esc(f.path) + '</code>', badge(f.change), '<span class="num-add">+' + esc(f.added) + '</span> <span class="num-del">−' + esc(f.removed) + '</span>', esc(f.why)];
+    })));
+
+  h += card('Reviews', arr(d.reviews).length ? arr(d.reviews).map(function (r) {
+    return '<details' + (/approved/i.test(r.verdict) ? '' : ' open') + '><summary>' + esc(r.kind === 'tests' ? 'Test review' : 'Code review') +
+      ' · round ' + esc(r.round) + ' ' + badge(r.verdict) + '</summary>' +
+      table(['Severity', 'Where', 'Finding', 'Resolution'], arr(r.findings).map(function (f) {
+        return [badge(f.severity), '<code>' + esc(f.file) + (f.line ? ':' + esc(f.line) : '') + '</code>', esc(f.text), badge(f.resolution)];
+      })) + '</details>';
+  }).join('') : none);
+
+  var t = d.tests || {};
+  h += card('Tests',
+    '<div class="grid">' + [['Command', t.command], ['Passed', t.passed], ['Failed', t.failed], ['Skipped', t.skipped]]
+      .map(function (kv) { return '<div class="kv"><b>' + esc(kv[0]) + '</b><span>' + esc(kv[1]) + '</span></div>'; }).join('') + '</div>' +
+    '<h3>Tests added</h3>' + list(t.added, function (a) { return '<code>' + esc(a.path) + '</code>' + list(a.cases); }) +
+    (t.notes ? '<p class="muted">' + esc(t.notes) + '</p>' : ''));
+
+  var s = d.security || {};
+  h += card('Security', '<p>Verdict: ' + badge(s.verdict) + '</p>' + table(['Severity', 'Finding', 'Where', 'Details', 'Resolution'],
+    arr(s.findings).map(function (f) { return [badge(f.severity), esc(f.title), '<code>' + esc(f.file) + '</code>', esc(f.text), esc(f.resolution)]; })));
+
+  h += card('Decisions', table(['Time', 'Decision', 'By'], arr(d.decisions).map(function (x) { return [esc(x.time), esc(x.text), esc(x.by)]; })));
+  h += card('Next steps', list(d.nextSteps));
+  h += card('Timeline', table(['Time', 'Actor', 'Event'], arr(d.timeline).map(function (x) { return [esc(x.time), esc(x.actor), esc(x.event)]; })));
+  h += card('Run files', list(d.artifacts, function (a) { return esc(a.label) + ': <a href="' + esc(a.path) + '"><code>' + esc(a.path) + '</code></a>'; }));
+
+  document.getElementById('app').innerHTML = h;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "matcher": "Bash",
+        "bash": "[ ! -f .github/skills/artisans/hooks/guard-command ] || bash .github/skills/artisans/hooks/guard-command || true",
+        "powershell": "if (Get-Command bash -ErrorAction SilentlyContinue) { $input | bash .github/skills/artisans/hooks/guard-command 2>$null }; exit 0",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
